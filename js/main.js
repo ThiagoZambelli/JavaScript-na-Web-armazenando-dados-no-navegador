@@ -1,66 +1,85 @@
-//criação de uma cosntante que pega o formulario do HTML e carrega nela
 const form = document.getElementById("novoItem");
-//criação de uma cosntante que a Ul do HTML com o ID lista e carrega nela
 const lista = document.getElementById("lista")
-//criação de uma cosntante que pega os elementos com o nome "itens" de dentro so LocalStorage (que são sempre salvos como string)
-//e passa pelo metodo do JSON para transformar novamente em arrey ou se o localStorage estiver vazio cria um novo arrey
 const itens = JSON.parse(localStorage.getItem("itens")) || [];
 
-//um forEach passando por todos os elementos do arrey itens criado anteriormente e chamando a função criarElemento
-// isso vai criar a lista com todos os elementos salvos no LocalStorage sempre que carregar a pagina
-itens.forEach((elemento) => {
-    //P.S forEach passa por todos os elementos de uma lista
+
+itens.forEach((elemento) => {   
    criaElemento(elemento);
 })
 
-// Pega o formulario, antes salvo em uma variavel, e seta um evento de click no "submit" (Botao do formulario)
-form.addEventListener("submit", (evento)=>{
-    //Faz com que o evento intrinsico ao submit não aconteça (recarregar a pagina) 
+
+form.addEventListener("submit", (evento)=>{   
     evento.preventDefault();
 
-    //Criação da variavel pegando o capo "nome" do formulario passado no target do evento
-    const nome = evento.target.elements["nome"];
-    //Criação da variavel pegando o capo "quantidade" do formulario passado no target do evento
-    const quantidade = evento.target.elements["quantidade"]
     
-    //criação de uma cosntante no formato de objeto, para salvar o nome e a quantidade do formulario
+    const nome = evento.target.elements["nome"];    
+    const quantidade = evento.target.elements["quantidade"]
+
+    const existe = itens.find(elemento => elemento.nome === nome.value)
+
     const itemAtual = {
         "nome" : nome.value,
         "quantidade": quantidade.value
-    }  
+    } 
 
-    //chamando a função criar elemento passando o objeto criado anteriormente
-    criaElemento(itemAtual);
+    if (existe){
+        itemAtual.id = existe.id
+        atualizaElemento(itemAtual);
 
-    //adicionando o objero criado anteriormente na lista atual de itens
-    itens.push(itemAtual);
+        itens[itens.findIndex(elemento => elemento.id === existe.id)] = itemAtual;
 
-    //salvando no LocalStorage, o obejeto recem criado, no formato de string, passando ele antes pelo metodo JSON stringfy
+    }  else {
+        itemAtual.id = itens[itens.length -1] ? (itens[itens.length-1]).id -1 : 0;
+
+        criaElemento(itemAtual);
+    
+        itens.push(itemAtual);
+
+    }    
+    
     localStorage.setItem("itens", JSON.stringify(itens));
-
-    //limpando os inputs 
+    
     quantidade.value = "";
     nome.value = "";
 })
 
-//função responsavel por receber um objeto e criar as li na tela com o mesmo
+
 function criaElemento(item){   
-    //cria uma constante com um elemento li chamado novoItem
-    const novoItem = document.createElement('li');
-    //coloca no novo item uma classe "item"
+    
+    const novoItem = document.createElement('li');    
     novoItem.classList.add("item");
 
-    //cria um elemento Strong chamado numeroItem
-    const numeroItem = document.createElement("strong");
-    //seta um valor dentro do elemento usando a quantidade passada pelo objeto recebido como parametro
-    numeroItem.innerHTML = item.quantidade;
-    //insere na li crada anteriormente um elemento filho, sendo esse o elemento Strong criado anteriormente
-    novoItem.appendChild(numeroItem);
-    //Correção feita por mim, colocando a primeira letra de todos os itens como maiuscula
-    let nomeCorrigido = item.nome[0].toUpperCase() + item.nome.substring(1);
-    //coloca como valor da li o nome do objeto recebido como parametro da funçaõ
-    novoItem.innerHTML += nomeCorrigido;
     
-    //insere na lista carregada no inicio do documento js o item criado, sendo esse a <li classe="item"><Strong>quantidade</Strong>nome</li>
+    const numeroItem = document.createElement("strong");    
+    numeroItem.innerHTML = item.quantidade;
+    numeroItem.dataset.id = item.id;
+    
+    novoItem.appendChild(numeroItem);
+    
+    let nomeCorrigido = item.nome[0].toUpperCase() + item.nome.substring(1);
+    
+    novoItem.innerHTML += nomeCorrigido;
+    novoItem.appendChild(botaoDeleta(item.id));
     lista.appendChild(novoItem);   
+}
+
+function atualizaElemento(item){
+    document.querySelector("[data-id='"+item.id+"']").innerHTML = item.quantidade;
+}
+
+function botaoDeleta(id){
+    const elementoBotao = document.createElement("button");
+    elementoBotao.innerText = "X"
+    elementoBotao.addEventListener("click", function() {
+        deletaElemento(this.parentNode, id);
+    })
+    return elementoBotao;
+}
+
+function deletaElemento(elemento ,id){
+    elemento.remove();
+
+    itens.splice(itens.findIndex(elemento => elemento.id === id), 1)
+
+    localStorage.setItem("itens", JSON.stringify(itens));
 }
